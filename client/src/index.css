@@ -1,0 +1,66 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  color: #222;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+main {
+  min-height: 80vh;
+  padding: 30px;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  main {
+    padding: 20px;
+  }
+
+  nav {
+    flex-direction: column;
+    height: auto !important;
+    padding: 20px !important;
+    gap: 15px;
+  }
+
+  nav div {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  main {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    width: 100%;
+  }
+}
