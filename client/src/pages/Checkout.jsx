@@ -1,10 +1,91 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import API from "../services/api";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 function Checkout() {
-  const { cartItems, cartTotal } = useCart();
+  const navigate = useNavigate();
 
-  if (cartItems.length === 0) {
+  const { cartItems, cartTotal, clearCart } = useCart();
+  const { userInfo } = useAuth();
+
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("United Kingdom");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const itemsPrice = Number(cartTotal.toFixed(2));
+  const shippingPrice = itemsPrice > 100 ? 0 : 4.99;
+  const taxPrice = Number((itemsPrice * 0.2).toFixed(2));
+  const totalPrice = Number((itemsPrice + shippingPrice + taxPrice).toFixed(2));
+
+  const placeOrderHandler = async (e) => {
+    e.preventDefault();
+
+    if (!userInfo) {
+      navigate("/login");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setError("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      setSuccessMessage("");
+
+      const orderData = {
+        orderItems: cartItems.map((item) => ({
+          name: item.name,
+          qty: item.quantity,
+          image: item.image,
+          price: item.price,
+          product: item._id || item.id,
+        })),
+
+        shippingAddress: {
+          address,
+          city,
+          postalCode,
+          country,
+        },
+
+        paymentMethod: "Cash on Delivery",
+        shippingPrice,
+        taxPrice,
+      };
+
+      const res = await API.post("/orders", orderData);
+
+      if (clearCart) {
+        clearCart();
+      }
+
+      setSuccessMessage(`Order placed successfully. Order ID: ${res.data._id}`);
+
+      setTimeout(() => {
+        navigate("/products");
+      }, 2000);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to place order. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (cartItems.length === 0 && !successMessage) {
     return (
       <section>
         <h1>Checkout</h1>
@@ -21,39 +102,93 @@ function Checkout() {
       <h1>Checkout</h1>
       <p>Review your order and enter delivery details.</p>
 
+      {!userInfo && (
+        <p style={styles.error}>
+          You must login before placing an order.
+        </p>
+      )}
+
+      {error && <p style={styles.error}>{error}</p>}
+      {successMessage && <p style={styles.success}>{successMessage}</p>}
+
       <div style={styles.layout}>
-        <form style={styles.formBox}>
+        <form style={styles.formBox} onSubmit={placeOrderHandler}>
           <h2>Delivery Details</h2>
 
           <div style={styles.field}>
             <label>Full Name</label>
-            <input type="text" placeholder="Enter your full name" style={styles.input} />
+            <input
+              type="text"
+              value={userInfo?.name || ""}
+              placeholder="Login to show your name"
+              style={styles.input}
+              readOnly
+            />
           </div>
 
           <div style={styles.field}>
             <label>Email</label>
-            <input type="email" placeholder="Enter your email" style={styles.input} />
+            <input
+              type="email"
+              value={userInfo?.email || ""}
+              placeholder="Login to show your email"
+              style={styles.input}
+              readOnly
+            />
           </div>
 
           <div style={styles.field}>
             <label>Address</label>
-            <input type="text" placeholder="Enter your address" style={styles.input} />
+            <input
+              type="text"
+              placeholder="Enter your address"
+              style={styles.input}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+            />
           </div>
 
           <div style={styles.row}>
             <div style={styles.field}>
               <label>City</label>
-              <input type="text" placeholder="City" style={styles.input} />
+              <input
+                type="text"
+                placeholder="City"
+                style={styles.input}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
             </div>
 
             <div style={styles.field}>
               <label>Postcode</label>
-              <input type="text" placeholder="Postcode" style={styles.input} />
+              <input
+                type="text"
+                placeholder="Postcode"
+                style={styles.input}
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                required
+              />
             </div>
           </div>
 
-          <button type="button" style={styles.button}>
-            Place Order
+          <div style={styles.field}>
+            <label>Country</label>
+            <input
+              type="text"
+              placeholder="Country"
+              style={styles.input}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Placing order..." : "Place Order"}
           </button>
         </form>
 
@@ -61,27 +196,44 @@ function Checkout() {
           <h2>Order Summary</h2>
 
           {cartItems.map((item) => (
-            <div key={item.id} style={styles.orderItem}>
+            <div key={item._id || item.id} style={styles.orderItem}>
               <img src={item.image} alt={item.name} style={styles.image} />
 
               <div>
                 <h4>{item.name}</h4>
                 <p>
-                  £{item.price} × {item.quantity}
+                  £{Number(item.price).toFixed(2)} × {item.quantity}
                 </p>
               </div>
 
-              <strong>£{(item.price * item.quantity).toFixed(2)}</strong>
+              <strong>
+                £{(Number(item.price) * item.quantity).toFixed(2)}
+              </strong>
             </div>
           ))}
 
+          <div style={styles.priceRow}>
+            <span>Items</span>
+            <strong>£{itemsPrice.toFixed(2)}</strong>
+          </div>
+
+          <div style={styles.priceRow}>
+            <span>Shipping</span>
+            <strong>£{shippingPrice.toFixed(2)}</strong>
+          </div>
+
+          <div style={styles.priceRow}>
+            <span>Tax</span>
+            <strong>£{taxPrice.toFixed(2)}</strong>
+          </div>
+
           <div style={styles.total}>
             <h2>Total</h2>
-            <h2>£{cartTotal.toFixed(2)}</h2>
+            <h2>£{totalPrice.toFixed(2)}</h2>
           </div>
 
           <p style={styles.note}>
-            Stripe test payment will be added later after backend setup.
+            Payment method: Cash on Delivery. Stripe test payment can be added later.
           </p>
         </div>
       </div>
@@ -147,10 +299,17 @@ const styles = {
     objectFit: "cover",
     borderRadius: "8px",
   },
+  priceRow: {
+    marginTop: "12px",
+    display: "flex",
+    justifyContent: "space-between",
+  },
   total: {
     marginTop: "20px",
     display: "flex",
     justifyContent: "space-between",
+    borderTop: "1px solid #e5e7eb",
+    paddingTop: "15px",
   },
   note: {
     marginTop: "15px",
@@ -162,6 +321,22 @@ const styles = {
     marginTop: "15px",
     color: "#2563eb",
     fontWeight: "bold",
+  },
+  error: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    padding: "10px",
+    borderRadius: "8px",
+    marginTop: "15px",
+    marginBottom: "15px",
+  },
+  success: {
+    background: "#dcfce7",
+    color: "#166534",
+    padding: "10px",
+    borderRadius: "8px",
+    marginTop: "15px",
+    marginBottom: "15px",
   },
 };
 

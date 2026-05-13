@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,17 +27,17 @@ function Register() {
         password,
       });
 
-      localStorage.setItem("userInfo", JSON.stringify(res.data));
-
-      setLoading(false);
+      login(res.data);
 
       navigate("/");
     } catch (err) {
-      setLoading(false);
-
       setError(
-        err.response?.data?.message || "Registration failed. Please try again."
+        err.response?.data?.message ||
+          err.message ||
+          "Registration failed. Please try again."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
