@@ -1,91 +1,141 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import "../styles/Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
   const { userInfo, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
 
   const logoutHandler = () => {
     logout();
+    closeMenu();
     navigate("/login");
   };
 
   return (
-    <nav style={styles.navbar}>
-      <Link to="/" style={styles.logo}>
-        Akash_AI Shopping
-      </Link>
-
-      <div style={styles.links}>
-        <Link to="/" style={styles.link}>Home</Link>
-        <Link to="/products" style={styles.link}>Products</Link>
-        <Link to="/cart" style={styles.link}>Cart</Link>
-
-        {userInfo && userInfo.role === "admin" && (
-          <Link to="/admin" style={styles.link}>Admin</Link>
-        )}
-
-        {userInfo ? (
-          <>
-            <span style={styles.welcome}>
-              Welcome, {userInfo.name}
-            </span>
-
-            <button onClick={logoutHandler} style={styles.logoutButton}>
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" style={styles.link}>Login</Link>
-            <Link to="/register" style={styles.link}>Register</Link>
-          </>
-        )}
+    <header className="lux-header">
+      <div className="lux-announcement">
+        <span>Premium AI-powered shopping experience</span>
+        <span>Fast checkout • Smart recommendations • Secure orders</span>
       </div>
-    </nav>
+
+      <nav className="lux-navbar">
+        <Link to="/" className="lux-logo" onClick={closeMenu}>
+          <span className="lux-logo-mark">A</span>
+
+          <span className="lux-logo-text">
+            Akash<span>AI</span>
+          </span>
+        </Link>
+
+        <button
+          type="button"
+          className={`lux-menu-btn ${menuOpen ? "is-open" : ""}`}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Toggle navigation menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div className={`lux-nav-panel ${menuOpen ? "is-open" : ""}`}>
+          <div className="lux-nav-links">
+            <NavLink to="/" onClick={closeMenu} className="lux-nav-link">
+              Home
+            </NavLink>
+
+            <NavLink to="/products" onClick={closeMenu} className="lux-nav-link">
+              Products
+            </NavLink>
+
+            <NavLink to="/cart" onClick={closeMenu} className="lux-nav-link">
+              Cart
+            </NavLink>
+
+            {userInfo && (
+              <NavLink
+                to="/my-orders"
+                onClick={closeMenu}
+                className="lux-nav-link"
+              >
+                My Orders
+              </NavLink>
+            )}
+
+            {userInfo?.role === "admin" && (
+              <div className="lux-admin-links">
+                <NavLink
+                  to="/admin"
+                  onClick={closeMenu}
+                  className="lux-nav-link lux-admin-link"
+                >
+                  Admin Products
+                </NavLink>
+
+                <NavLink
+                  to="/admin/orders"
+                  onClick={closeMenu}
+                  className="lux-nav-link lux-admin-link"
+                >
+                  Admin Orders
+                </NavLink>
+              </div>
+            )}
+          </div>
+
+          <div className="lux-nav-actions">
+            {userInfo ? (
+              <>
+                <div className="lux-user-card">
+                  <span className="lux-user-avatar">
+                    {userInfo.name?.charAt(0).toUpperCase() || "U"}
+                  </span>
+
+                  <div>
+                    <span className="lux-user-label">Signed in as</span>
+                    <strong>{userInfo.name || "User"}</strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={logoutHandler}
+                  className="lux-logout-btn"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink
+                  to="/login"
+                  onClick={closeMenu}
+                  className="lux-login-btn"
+                >
+                  Login
+                </NavLink>
+
+                <NavLink
+                  to="/register"
+                  onClick={closeMenu}
+                  className="lux-register-btn"
+                >
+                  Create Account
+                </NavLink>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
   );
 }
-
-const styles = {
-  navbar: {
-    height: "70px",
-    padding: "0 40px",
-    background: "#111827",
-    color: "white",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logo: {
-    color: "white",
-    textDecoration: "none",
-    fontSize: "22px",
-    fontWeight: "bold",
-  },
-  links: {
-    display: "flex",
-    gap: "22px",
-    alignItems: "center",
-  },
-  link: {
-    color: "white",
-    textDecoration: "none",
-    fontSize: "16px",
-  },
-  welcome: {
-    color: "#facc15",
-    fontWeight: "600",
-    fontSize: "16px",
-  },
-  logoutButton: {
-    background: "#ef4444",
-    color: "white",
-    border: "none",
-    padding: "8px 14px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "15px",
-  },
-};
 
 export default Navbar;

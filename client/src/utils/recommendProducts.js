@@ -1,30 +1,59 @@
-export function getRecommendedProducts(currentProduct, products) {
-  if (!currentProduct) return [];
+export function getRecommendedProducts(currentProduct, allProducts) {
+  if (!currentProduct || !allProducts || allProducts.length === 0) {
+    return [];
+  }
 
-  const scoredProducts = products
-    .filter((product) => product.id !== currentProduct.id)
+  const currentProductId = currentProduct._id || currentProduct.id;
+
+  const scoredProducts = allProducts
+    .filter((product) => {
+      const productId = product._id || product.id;
+      return productId !== currentProductId;
+    })
     .map((product) => {
       let score = 0;
 
-      if (product.category === currentProduct.category) {
+      // Same category = strongest match
+      if (
+        product.category &&
+        currentProduct.category &&
+        product.category.toLowerCase() === currentProduct.category.toLowerCase()
+      ) {
         score += 5;
       }
 
-      if (product.brand === currentProduct.brand) {
+      // Same brand = useful match
+      if (
+        product.brand &&
+        currentProduct.brand &&
+        product.brand.toLowerCase() === currentProduct.brand.toLowerCase()
+      ) {
         score += 3;
       }
 
-      const priceDifference = Math.abs(product.price - currentProduct.price);
-
-      if (priceDifference <= 100) {
-        score += 2;
-      }
-
-      const matchingTags = product.tags?.filter((tag) =>
-        currentProduct.tags?.includes(tag)
+      // Similar price = useful match
+      const priceDifference = Math.abs(
+        Number(product.price) - Number(currentProduct.price)
       );
 
-      score += matchingTags.length * 4;
+      if (priceDifference <= 20) {
+        score += 2;
+      } else if (priceDifference <= 50) {
+        score += 1;
+      }
+
+      // Matching tags = extra similarity
+      if (Array.isArray(product.tags) && Array.isArray(currentProduct.tags)) {
+        const currentTags = currentProduct.tags.map((tag) =>
+          tag.toLowerCase()
+        );
+
+        const matchingTags = product.tags.filter((tag) =>
+          currentTags.includes(tag.toLowerCase())
+        );
+
+        score += matchingTags.length * 2;
+      }
 
       return {
         ...product,
@@ -32,7 +61,8 @@ export function getRecommendedProducts(currentProduct, products) {
       };
     })
     .filter((product) => product.recommendationScore > 0)
-    .sort((a, b) => b.recommendationScore - a.recommendationScore);
+    .sort((a, b) => b.recommendationScore - a.recommendationScore)
+    .slice(0, 4);
 
-  return scoredProducts.slice(0, 3);
+  return scoredProducts;
 }

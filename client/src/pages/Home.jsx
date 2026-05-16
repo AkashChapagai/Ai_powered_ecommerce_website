@@ -1,357 +1,301 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import products from "../data/products";
+import API from "../services/api";
 import ProductCard from "../components/ProductCard";
-//running code 
-//cd ~/ai-ecommerce-project/client
-//npm run dev
+import "../styles/Home.css";
+
 function Home() {
-  const featuredProducts = products.slice(0, 3);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      setLoading(true);
+
+      const res = await API.get("/products");
+
+      setFeaturedProducts(res.data.slice(0, 8));
+    } catch (error) {
+      console.log("Failed to fetch featured products:", error);
+      setFeaturedProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const heroProducts = useMemo(() => {
+    return featuredProducts.slice(0, 5);
+  }, [featuredProducts]);
+
+  useEffect(() => {
+    if (heroProducts.length <= 1) return;
+
+    const slider = setInterval(() => {
+      setActiveIndex((currentIndex) => (currentIndex + 1) % heroProducts.length);
+    }, 3200);
+
+    return () => clearInterval(slider);
+  }, [heroProducts.length]);
+
+  const activeProduct = heroProducts[activeIndex] || featuredProducts[0];
+
+  const categories = useMemo(() => {
+    return [
+      ...new Set(
+        featuredProducts
+          .map((product) => product.category)
+          .filter(Boolean)
+          .map((category) => category.trim())
+      ),
+    ].slice(0, 4);
+  }, [featuredProducts]);
 
   return (
-    <section>
-      {/* HERO SECTION */}
-      <div style={styles.hero}>
-        <div>
-          <p style={styles.badge}>AI-Powered E-Commerce Platform</p>
+    <main className="home-page">
+      <section className="home-hero">
+        <div className="home-aurora home-aurora-one"></div>
+        <div className="home-aurora home-aurora-two"></div>
+        <div className="home-grid-light"></div>
 
-          <h1 style={styles.title}>
-            Shop smarter with intelligent product recommendations
+        <div className="home-hero-copy">
+          <span className="home-eyebrow">AI Shopping Studio</span>
+
+          <h1>
+            Discover products in a more beautiful way.
           </h1>
 
-          <p style={styles.subtitle}>
-            Discover products faster using a modern e-commerce platform with
-            smart recommendations, chatbot assistance, cart functionality, and
-            personalised shopping support.
+          <p>
+            A premium animated shopping experience with smart discovery, clean
+            navigation, and fast product browsing.
           </p>
 
-          <div style={styles.heroButtons}>
-            <Link to="/products" style={styles.primaryButton}>
+          <div className="home-hero-actions">
+            <Link to="/products" className="home-primary-btn">
               Start Shopping
             </Link>
 
-            <Link to="/products" style={styles.secondaryButton}>
-              View Products
+            <Link to="/cart" className="home-secondary-btn">
+              View Cart
             </Link>
           </div>
-        </div>
 
-        <div style={styles.heroPanel}>
-          <h2>Smart Shopping Assistant</h2>
-
-          <div style={styles.messageUser}>
-            I need headphones for travel under £60.
-          </div>
-
-          <div style={styles.messageBot}>
-            Based on your budget and travel needs, wireless headphones would be
-            a suitable choice.
-          </div>
-
-          <div style={styles.aiStats}>
+          <div className="home-hero-mini">
             <div>
-              <strong>4.6★</strong>
-              <span>Top Rating</span>
+              <strong>Live</strong>
+              <span>Products</span>
             </div>
 
             <div>
-              <strong>£49.99</strong>
-              <span>Best Match</span>
+              <strong>Smart</strong>
+              <span>Discovery</span>
+            </div>
+
+            <div>
+              <strong>Clean</strong>
+              <span>Checkout</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* AI FEATURES SECTION */}
-      <div style={styles.aiSection}>
-        <div>
-          <p style={styles.sectionLabel}>AI Features</p>
-          <h2 style={styles.sectionTitle}>
-            Intelligent features designed for better product discovery
-          </h2>
-          <p style={styles.sectionText}>
-            This project includes AI-enhanced functionality such as
-            behaviour-based recommendations and chatbot product assistance. The
-            system helps users find relevant products based on category, price,
-            tags, and shopping intent.
-          </p>
+        <div className="home-art-stage">
+          <div className="home-stage-orbit"></div>
+          <div className="home-stage-orbit home-stage-orbit-two"></div>
+
+          {heroProducts.length > 0 && (
+            <div className="home-orbit-products">
+              {heroProducts.slice(0, 4).map((product, index) => (
+                <button
+                  type="button"
+                  key={product._id || product.id || product.name}
+                  className="home-orbit-card"
+                  style={{ "--orbit-index": index }}
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`Show ${product.name}`}
+                >
+                  <img src={product.image} alt={product.name} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="home-main-product-card">
+            <div className="home-card-shine"></div>
+
+            <div className="home-card-top">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            {activeProduct ? (
+              <>
+                <div className="home-product-art">
+                  <img src={activeProduct.image} alt={activeProduct.name} />
+                </div>
+
+                <div className="home-product-meta">
+                  <span>{activeProduct.category || "Featured"}</span>
+
+                  <h2>{activeProduct.name}</h2>
+
+                  <div className="home-product-price-row">
+                    <strong>
+                      £{Number(activeProduct.price || 0).toFixed(2)}
+                    </strong>
+
+                    <Link to={`/products/${activeProduct._id || activeProduct.id}`}>
+                      View
+                    </Link>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="home-product-empty">
+                <span>Featured</span>
+                <h2>Add products to reveal the animated showcase.</h2>
+              </div>
+            )}
+          </div>
+
+          <div className="home-float-note home-float-note-one">
+            <span>AI Pick</span>
+            <strong>Matched</strong>
+          </div>
+
+          <div className="home-float-note home-float-note-two">
+            <span>Cart</span>
+            <strong>Ready</strong>
+          </div>
+
+          <div className="home-float-note home-float-note-three">
+            <span>Secure</span>
+            <strong>Checkout</strong>
+          </div>
         </div>
+      </section>
 
-        <div style={styles.featureGrid}>
-          <div style={styles.featureCard}>
-            <h3>Recommendation System</h3>
-            <p>
-              Suggests products using category, price range, brand, and product
-              tags.
-            </p>
+      <section className="home-marquee" aria-label="Store highlights">
+        <div className="home-marquee-track">
+          <span>Fast Browsing</span>
+          <span>Smart Recommendations</span>
+          <span>Premium Product Cards</span>
+          <span>Secure Checkout</span>
+          <span>Live Store Data</span>
+          <span>Animated Shopping UI</span>
+          <span>Fast Browsing</span>
+          <span>Smart Recommendations</span>
+          <span>Premium Product Cards</span>
+          <span>Secure Checkout</span>
+        </div>
+      </section>
+
+      {categories.length > 0 && (
+        <section className="home-category-showcase">
+          <div className="home-section-heading">
+            <span>Explore</span>
+            <h2>Shop by collection.</h2>
           </div>
 
-          <div style={styles.featureCard}>
-            <h3>Chatbot Assistant</h3>
-            <p>
-              Helps users search for products using natural shopping questions.
-            </p>
+          <div className="home-category-grid">
+            {categories.map((category, index) => (
+              <Link
+                to="/products"
+                key={category}
+                className="home-category-card"
+                style={{ "--category-index": index }}
+              >
+                <span>0{index + 1}</span>
+                <strong>{category}</strong>
+                <p>Explore now</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="home-spotlight">
+        <div className="home-spotlight-card">
+          <div className="home-spotlight-copy">
+            <span>Designed to impress</span>
+            <h2>Every product feels like a feature launch.</h2>
           </div>
 
-          <div style={styles.featureCard}>
-            <h3>User Behaviour</h3>
-            <p>
-              Tracks viewed products and shopping actions to improve future
-              suggestions.
-            </p>
-          </div>
+          <div className="home-spotlight-visual">
+            {heroProducts.slice(0, 3).map((product, index) => (
+              <div
+                className="home-spotlight-image"
+                key={product._id || product.id || product.name}
+                style={{ "--spotlight-index": index }}
+              >
+                <img src={product.image} alt={product.name} />
+              </div>
+            ))}
 
-          <div style={styles.featureCard}>
-            <h3>Smart Search</h3>
-            <p>
-              Supports faster product discovery through search, filter, and
-              sorting tools.
-            </p>
+            {heroProducts.length === 0 && (
+              <div className="home-spotlight-placeholder">
+                Add products to show this animated layer.
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* CATEGORY SECTION */}
-      <div style={styles.categorySection}>
-        <div style={styles.sectionHeader}>
+      <section className="home-featured-section">
+        <div className="home-featured-header">
           <div>
-            <p style={styles.sectionLabel}>Categories</p>
-            <h2>Shop by Category</h2>
+            <span>Featured Products</span>
+            <h2>Fresh picks from your store.</h2>
           </div>
-        </div>
 
-        <div style={styles.categoryGrid}>
-          <Link to="/products" style={styles.categoryCard}>
-            <h3>Electronics</h3>
-            <p>Laptops, headphones, smart devices</p>
-          </Link>
-
-          <Link to="/products" style={styles.categoryCard}>
-            <h3>Shoes</h3>
-            <p>Trainers and everyday footwear</p>
-          </Link>
-
-          <Link to="/products" style={styles.categoryCard}>
-            <h3>Accessories</h3>
-            <p>Smart watches and lifestyle items</p>
+          <Link to="/products" className="home-view-all">
+            View All Products
           </Link>
         </div>
-      </div>
 
-      {/* FEATURED PRODUCTS */}
-      <div style={styles.sectionHeader}>
+        {loading ? (
+          <div className="home-products-grid">
+            <div className="home-product-skeleton"></div>
+            <div className="home-product-skeleton"></div>
+            <div className="home-product-skeleton"></div>
+            <div className="home-product-skeleton"></div>
+          </div>
+        ) : featuredProducts.length === 0 ? (
+          <div className="home-empty-box">
+            <h3>No products yet</h3>
+            <p>Add products from the admin dashboard to show them here.</p>
+            <Link to="/admin">Go to Admin</Link>
+          </div>
+        ) : (
+          <div className="home-products-grid">
+            {featuredProducts.slice(0, 4).map((product) => (
+              <ProductCard
+                key={product._id || product.id || product.name}
+                product={product}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="home-final-banner">
+        <div className="home-final-glow"></div>
+
         <div>
-          <p style={styles.sectionLabel}>Featured Collection</p>
-          <h2>Featured Products</h2>
+          <span>Ready?</span>
+          <h2>Enter the full product catalogue.</h2>
         </div>
 
-        <Link to="/products" style={styles.viewAll}>
-          View All Products
+        <Link to="/products" className="home-light-btn">
+          Browse Products
         </Link>
-      </div>
-
-      <div style={styles.grid}>
-        {featuredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
-
-      
-    </section>
+      </section>
+    </main>
   );
 }
-
-const styles = {
-  hero: {
-    display: "grid",
-    gridTemplateColumns: "1.3fr 1fr",
-    gap: "35px",
-    alignItems: "center",
-    background: "linear-gradient(135deg, #111827, #1e3a8a)",
-    color: "white",
-    padding: "60px",
-    borderRadius: "22px",
-  },
-
-  badge: {
-    display: "inline-block",
-    background: "#2563eb",
-    padding: "8px 14px",
-    borderRadius: "999px",
-    marginBottom: "20px",
-    fontWeight: "bold",
-  },
-
-  title: {
-    fontSize: "48px",
-    lineHeight: "1.1",
-    marginBottom: "20px",
-    maxWidth: "760px",
-  },
-
-  subtitle: {
-    fontSize: "18px",
-    lineHeight: "1.7",
-    color: "#dbeafe",
-    maxWidth: "700px",
-  },
-
-  heroButtons: {
-    marginTop: "30px",
-    display: "flex",
-    gap: "15px",
-    flexWrap: "wrap",
-  },
-
-  primaryButton: {
-    padding: "14px 20px",
-    background: "white",
-    color: "#111827",
-    borderRadius: "10px",
-    fontWeight: "bold",
-  },
-
-  secondaryButton: {
-    padding: "14px 20px",
-    background: "#2563eb",
-    color: "white",
-    borderRadius: "10px",
-    fontWeight: "bold",
-  },
-
-  heroPanel: {
-    background: "white",
-    color: "#111827",
-    padding: "30px",
-    borderRadius: "18px",
-    boxShadow: "0 15px 35px rgba(0,0,0,0.25)",
-  },
-
-  messageUser: {
-    marginTop: "20px",
-    background: "#f3f4f6",
-    padding: "14px",
-    borderRadius: "12px",
-  },
-
-  messageBot: {
-    marginTop: "14px",
-    background: "#eff6ff",
-    color: "#1d4ed8",
-    padding: "14px",
-    borderRadius: "12px",
-    fontWeight: "bold",
-  },
-
-  aiStats: {
-    marginTop: "20px",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-  },
-
-  aiStats: {
-    marginTop: "20px",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-  },
-
-  aiSection: {
-    marginTop: "45px",
-    display: "grid",
-    gridTemplateColumns: "1fr 1.4fr",
-    gap: "30px",
-    background: "white",
-    padding: "40px",
-    borderRadius: "18px",
-  },
-
-  sectionLabel: {
-    color: "#2563eb",
-    fontWeight: "bold",
-    marginBottom: "8px",
-  },
-
-  sectionTitle: {
-    fontSize: "30px",
-    marginBottom: "14px",
-  },
-
-  sectionText: {
-    lineHeight: "1.7",
-    color: "#4b5563",
-  },
-
-  featureGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-  },
-
-  featureCard: {
-    background: "#f9fafb",
-    padding: "22px",
-    borderRadius: "14px",
-    border: "1px solid #e5e7eb",
-    lineHeight: "1.6",
-  },
-
-  categorySection: {
-    marginTop: "45px",
-  },
-
-  sectionHeader: {
-    marginTop: "45px",
-    marginBottom: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-  },
-
-  categoryGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "20px",
-  },
-
-  categoryCard: {
-    background: "white",
-    padding: "28px",
-    borderRadius: "16px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-    border: "1px solid #e5e7eb",
-  },
-
-  viewAll: {
-    color: "#2563eb",
-    fontWeight: "bold",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "24px",
-  },
-
-  whySection: {
-    marginTop: "50px",
-    display: "grid",
-    gridTemplateColumns: "1.3fr 1fr",
-    gap: "30px",
-    background: "#111827",
-    color: "white",
-    padding: "40px",
-    borderRadius: "18px",
-    lineHeight: "1.7",
-  },
-
-  whyList: {
-    background: "rgba(255,255,255,0.08)",
-    padding: "24px",
-    borderRadius: "14px",
-    lineHeight: "2",
-  },
-};
 
 export default Home;

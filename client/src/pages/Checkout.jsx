@@ -26,7 +26,7 @@ function Checkout() {
 
   const placeOrderHandler = async (e) => {
     e.preventDefault();
-
+//
     if (!userInfo) {
       navigate("/login");
       return;

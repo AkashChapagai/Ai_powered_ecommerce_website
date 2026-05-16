@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Order = require("../models/Order");
+const Product = require("../models/Product");
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -28,24 +29,17 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Shipping address is required" });
     }
 
-    const mappedOrderItems = orderItems.map((item) => {
-      return {
-        name: item.name,
-        qty: Number(item.qty || item.quantity || 1),
-        image: item.image,
-        price: Number(item.price),
-        product: item.product || item._id || item.id,
-      };
-    });
+    const mappedOrderItems = orderItems.map((item) => ({
+      qty: Number(item.qty || item.quantity || 1),
+      product: item.product || item._id || item.id,
+    }));
 
     const hasInvalidItem = mappedOrderItems.some(
       (item) =>
-        !item.name ||
-        !item.image ||
         !item.product ||
+        !mongoose.Types.ObjectId.isValid(item.product) ||
         !item.qty ||
-        item.qty < 1 ||
-        Number.isNaN(item.price)
+        item.qty < 1
     );
 
     if (hasInvalidItem) {
@@ -54,15 +48,61 @@ const createOrder = async (req, res) => {
       });
     }
 
-    const itemsPrice = mappedOrderItems.reduce((total, item) => {
-      return total + item.price * item.qty;
+    const productIds = mappedOrderItems.map((item) => item.product);
+
+    const productsFromDB = await Product.find({
+      _id: { $in: productIds },
+    });
+
+    if (productsFromDB.length !== mappedOrderItems.length) {
+      return res.status(404).json({
+        message: "One or more products were not found",
+      });
+    }
+
+    const finalOrderItems = [];
+
+    for (const item of mappedOrderItems) {
+      const productFromDB = productsFromDB.find(
+        (product) => product._id.toString() === item.product.toString()
+      );
+
+      if (!productFromDB) {
+        return res.status(404).json({
+          message: "Product not found",
+        });
+      }
+
+      if (productFromDB.countInStock < item.qty) {
+        return res.status(400).json({
+          message: `${productFromDB.name} only has ${productFromDB.countInStock} item(s) in stock`,
+        });
+      }
+
+      finalOrderItems.push({
+        name: productFromDB.name,
+        qty: item.qty,
+        image: productFromDB.image,
+        price: productFromDB.price,
+        product: productFromDB._id,
+      });
+    }
+
+    const itemsPrice = finalOrderItems.reduce((total, item) => {
+      return total + Number(item.price) * Number(item.qty);
     }, 0);
 
     const finalShippingPrice =
-      shippingPrice !== undefined ? Number(shippingPrice) : itemsPrice > 100 ? 0 : 4.99;
+      shippingPrice !== undefined
+        ? Number(shippingPrice)
+        : itemsPrice > 100
+        ? 0
+        : 4.99;
 
     const finalTaxPrice =
-      taxPrice !== undefined ? Number(taxPrice) : Number((itemsPrice * 0.2).toFixed(2));
+      taxPrice !== undefined
+        ? Number(taxPrice)
+        : Number((itemsPrice * 0.2).toFixed(2));
 
     const totalPrice = Number(
       (itemsPrice + finalShippingPrice + finalTaxPrice).toFixed(2)
@@ -70,22 +110,27 @@ const createOrder = async (req, res) => {
 
     const order = new Order({
       user: req.user._id,
-      orderItems: mappedOrderItems,
+      orderItems: finalOrderItems,
       shippingAddress,
       paymentMethod: paymentMethod || "Cash on Delivery",
       itemsPrice: Number(itemsPrice.toFixed(2)),
-      shippingPrice: finalShippingPrice,
-      taxPrice: finalTaxPrice,
+      shippingPrice: Number(finalShippingPrice.toFixed(2)),
+      taxPrice: Number(finalTaxPrice.toFixed(2)),
       totalPrice,
     });
 
     const createdOrder = await order.save();
 
+    for (const item of finalOrderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { countInStock: -item.qty },
+      });
+    }
+
     return res.status(201).json(createdOrder);
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to create order",
-      error: error.message,
+      message: error.message || "Failed to create order",
     });
   }
 };

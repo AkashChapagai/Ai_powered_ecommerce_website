@@ -1,0 +1,503 @@
+.lux-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(248, 250, 252, 0.86)),
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.14), transparent 34%),
+    radial-gradient(circle at 92% 0%, rgba(168, 85, 247, 0.12), transparent 32%);
+  backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.lux-header * {
+  box-sizing: border-box;
+}
+
+.lux-announcement {
+  width: min(100%, 1440px);
+  min-height: 34px;
+  margin: 0 auto;
+  padding: 0 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.lux-announcement span:first-child {
+  color: #2563eb;
+}
+
+.lux-navbar {
+  position: relative;
+  width: min(calc(100% - 32px), 1440px);
+  min-height: 78px;
+  margin: 0 auto 14px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(8, 13, 30, 0.98), rgba(15, 23, 42, 0.96) 48%, rgba(30, 41, 59, 0.96)),
+    radial-gradient(circle at 8% 10%, rgba(59, 130, 246, 0.42), transparent 34%),
+    radial-gradient(circle at 88% 0%, rgba(168, 85, 247, 0.32), transparent 36%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow:
+    0 28px 80px rgba(15, 23, 42, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.lux-navbar::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 27px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09), transparent 38%),
+    radial-gradient(circle at 45% 0%, rgba(255, 255, 255, 0.08), transparent 36%);
+}
+
+.lux-logo {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lux-logo-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background:
+    linear-gradient(135deg, #2563eb, #7c3aed 52%, #ec4899),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 34%);
+  color: #ffffff;
+  font-size: 1.18rem;
+  font-weight: 950;
+  box-shadow:
+    0 16px 36px rgba(37, 99, 235, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.lux-logo-text {
+  font-size: 1.34rem;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+}
+
+.lux-logo-text span {
+  margin-left: 3px;
+  background: linear-gradient(135deg, #60a5fa, #c084fc, #f9a8d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lux-nav-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.lux-nav-links,
+.lux-nav-actions,
+.lux-admin-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lux-nav-link,
+.lux-login-btn,
+.lux-register-btn {
+  position: relative;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 850;
+  padding: 0 13px;
+  border-radius: 15px;
+  transition:
+    color 0.22s ease,
+    background 0.22s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.lux-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 7px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #60a5fa, #c084fc);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.24s ease;
+}
+
+.lux-nav-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.085);
+  transform: translateY(-1px);
+}
+
+.lux-nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.lux-nav-link.active {
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.96), rgba(124, 58, 237, 0.9));
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.3);
+}
+
+.lux-nav-link.active::after {
+  display: none;
+}
+
+.lux-admin-links {
+  margin-left: 5px;
+  padding-left: 13px;
+  border-left: 1px solid rgba(255, 255, 255, 0.13);
+}
+
+.lux-admin-link {
+  color: #fde68a;
+}
+
+.lux-admin-link.active {
+  color: #111827;
+  background: linear-gradient(135deg, #fde047, #f59e0b);
+  box-shadow: 0 14px 32px rgba(245, 158, 11, 0.28);
+}
+
+.lux-nav-actions {
+  margin-left: 4px;
+}
+
+.lux-user-card {
+  min-height: 48px;
+  max-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  color: #ffffff;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.lux-user-avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #facc15, #f97316);
+  color: #111827;
+  font-size: 0.92rem;
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.26);
+}
+
+.lux-user-card div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.lux-user-label {
+  color: #94a3b8;
+  font-size: 0.67rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.lux-user-card strong {
+  max-width: 126px;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lux-logout-btn,
+.lux-register-btn {
+  border: none;
+  cursor: pointer;
+}
+
+.lux-logout-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 900;
+  box-shadow: 0 14px 32px rgba(239, 68, 68, 0.26);
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.lux-logout-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+  box-shadow: 0 18px 40px rgba(239, 68, 68, 0.34);
+}
+
+.lux-login-btn {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lux-login-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.13);
+  transform: translateY(-1px);
+}
+
+.lux-register-btn {
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, #ffffff, #dbeafe),
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.5), transparent 36%);
+  box-shadow: 0 14px 32px rgba(255, 255, 255, 0.12);
+}
+
+.lux-register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px rgba(96, 165, 250, 0.24);
+}
+
+.lux-register-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+}
+
+.lux-menu-btn {
+  position: relative;
+  z-index: 4;
+  width: 48px;
+  height: 48px;
+  display: none;
+  place-items: center;
+  border: none;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.lux-menu-btn span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  margin: 4px auto;
+  border-radius: 999px;
+  background: #ffffff;
+  transition:
+    transform 0.24s ease,
+    opacity 0.24s ease;
+}
+
+.lux-menu-btn.is-open span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.lux-menu-btn.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.lux-menu-btn.is-open span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+@media (max-width: 1250px) {
+  .lux-navbar {
+    width: min(calc(100% - 24px), 1440px);
+  }
+
+  .lux-nav-panel {
+    gap: 10px;
+  }
+
+  .lux-nav-link,
+  .lux-login-btn,
+  .lux-register-btn {
+    padding: 0 10px;
+    font-size: 0.86rem;
+  }
+
+  .lux-user-card strong {
+    max-width: 88px;
+  }
+}
+
+@media (max-width: 1060px) {
+  .lux-announcement {
+    padding: 0 22px;
+  }
+
+  .lux-announcement span:last-child {
+    display: none;
+  }
+
+  .lux-menu-btn {
+    display: block;
+  }
+
+  .lux-navbar {
+    min-height: 72px;
+    padding: 0 14px;
+  }
+
+  .lux-nav-panel {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 26px;
+    background:
+      linear-gradient(135deg, rgba(8, 13, 30, 0.99), rgba(15, 23, 42, 0.99)),
+      radial-gradient(circle at top right, rgba(37, 99, 235, 0.2), transparent 36%);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.38);
+    transform: translateY(-12px) scale(0.98);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.24s ease,
+      transform 0.24s ease,
+      visibility 0.24s ease;
+  }
+
+  .lux-nav-panel.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .lux-nav-links,
+  .lux-nav-actions,
+  .lux-admin-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .lux-nav-link,
+  .lux-login-btn,
+  .lux-register-btn,
+  .lux-logout-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .lux-admin-links {
+    margin-left: 0;
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .lux-nav-actions {
+    margin-left: 0;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .lux-user-card {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+    border-radius: 18px;
+    padding: 10px;
+  }
+
+  .lux-user-card strong {
+    max-width: 260px;
+  }
+}
+
+@media (max-width: 560px) {
+  .lux-announcement {
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    text-align: center;
+    font-size: 0.7rem;
+  }
+
+  .lux-navbar {
+    width: min(calc(100% - 16px), 1440px);
+    margin-bottom: 10px;
+    border-radius: 22px;
+  }
+
+  .lux-navbar::before {
+    border-radius: 21px;
+  }
+
+  .lux-logo-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+  }
+
+  .lux-logo-text {
+    font-size: 1.12rem;
+  }
+
+  .lux-menu-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .lux-nav-panel {
+    border-radius: 22px;
+  }
+}

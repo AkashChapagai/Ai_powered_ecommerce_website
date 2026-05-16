@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import API from "../services/api";
+import "../styles/Products.css";
 
 function Products() {
   const [products, setProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState("All");
-  const [sortOption, setSortOption] = useState("");
+  const [sortOption, setSortOption] = useState("newest");
   const [loading, setLoading] = useState(true);
 
   const fetchProducts = async () => {
@@ -18,6 +19,7 @@ function Products() {
       setProducts(data);
     } catch (error) {
       console.log("Failed to fetch products:", error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -27,149 +29,308 @@ function Products() {
     fetchProducts();
   }, []);
 
-  const categories = [
-    "All",
-    ...new Set(products.map((item) => item.category).filter(Boolean)),
-  ];
+  const categories = useMemo(() => {
+    return [
+      "All",
+      ...new Set(
+        products
+          .map((item) => item.category)
+          .filter(Boolean)
+          .map((item) => item.trim())
+      ),
+    ];
+  }, [products]);
 
-  let filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      ?.toLowerCase()
-      .includes(searchText.toLowerCase());
+  const sortLabels = {
+    newest: "Newest first",
+    "low-high": "Price: Low to high",
+    "high-low": "Price: High to low",
+    "rating-high": "Highest rated",
+    "most-reviewed": "Most reviewed",
+    "stock-high": "Stock: High to low",
+  };
 
-    const matchesCategory =
-      category === "All" || product.category === category;
+  const filteredProducts = useMemo(() => {
+    const searchValue = searchText.trim().toLowerCase();
 
-    return matchesSearch && matchesCategory;
-  });
+    let result = products.filter((product) => {
+      const searchableText = [
+        product.name,
+        product.brand,
+        product.category,
+        product.description,
+        ...(product.tags || []),
+      ]
+        .join(" ")
+        .toLowerCase();
 
-  if (sortOption === "low-high") {
-    filteredProducts = [...filteredProducts].sort(
-      (a, b) => Number(a.price) - Number(b.price)
-    );
-  }
+      const matchesSearch =
+        searchValue.length === 0 || searchableText.includes(searchValue);
 
-  if (sortOption === "high-low") {
-    filteredProducts = [...filteredProducts].sort(
-      (a, b) => Number(b.price) - Number(a.price)
-    );
-  }
+      const matchesCategory =
+        category === "All" ||
+        product.category?.toLowerCase() === category.toLowerCase();
 
-  if (sortOption === "rating") {
-    filteredProducts = [...filteredProducts].sort(
-      (a, b) => Number(b.rating || 0) - Number(a.rating || 0)
-    );
-  }
+      return matchesSearch && matchesCategory;
+    });
+
+    if (sortOption === "newest") {
+      result = [...result].sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+    }
+
+    if (sortOption === "low-high") {
+      result = [...result].sort(
+        (a, b) => Number(a.price || 0) - Number(b.price || 0)
+      );
+    }
+
+    if (sortOption === "high-low") {
+      result = [...result].sort(
+        (a, b) => Number(b.price || 0) - Number(a.price || 0)
+      );
+    }
+
+    if (sortOption === "rating-high") {
+      result = [...result].sort(
+        (a, b) => Number(b.rating || 0) - Number(a.rating || 0)
+      );
+    }
+
+    if (sortOption === "most-reviewed") {
+      result = [...result].sort(
+        (a, b) => Number(b.numReviews || 0) - Number(a.numReviews || 0)
+      );
+    }
+
+    if (sortOption === "stock-high") {
+      result = [...result].sort(
+        (a, b) => Number(b.countInStock || 0) - Number(a.countInStock || 0)
+      );
+    }
+
+    return result;
+  }, [products, searchText, category, sortOption]);
+
+  const totalProducts = products.length;
+  const totalCategories = Math.max(categories.length - 1, 0);
+  const inStockProducts = products.filter(
+    (product) => Number(product.countInStock || 0) > 0
+  ).length;
+
+  const hasActiveFilters =
+    searchText.trim() !== "" || category !== "All" || sortOption !== "newest";
+
+  const resetFilters = () => {
+    setSearchText("");
+    setCategory("All");
+    setSortOption("newest");
+  };
 
   if (loading) {
     return (
-      <section>
-        <h1>Products</h1>
-        <p>Loading products...</p>
-      </section>
+      <main className="products-page">
+        <section className="products-catalog-shell products-loading-shell">
+          <div className="products-loader"></div>
+
+          <span className="products-kicker">Product Catalog</span>
+
+          <h1>Loading products...</h1>
+
+          <p>
+            Preparing the product catalog, search tools, category filters, and
+            sorting options.
+          </p>
+        </section>
+
+        <section className="products-skeleton-grid">
+          <div className="products-skeleton-card"></div>
+          <div className="products-skeleton-card"></div>
+          <div className="products-skeleton-card"></div>
+          <div className="products-skeleton-card"></div>
+        </section>
+      </main>
     );
   }
 
   return (
-    <section>
-      <div style={styles.header}>
-        <div>
-          <h1>Products</h1>
-          <p>Browse products with search, filter, and smart sorting.</p>
+    <main className="products-page">
+      <section className="products-catalog-shell">
+        <div className="products-catalog-header">
+          <div className="products-catalog-copy">
+            <span className="products-kicker">Product Catalog</span>
+
+            <h1>Shop smarter. Find products faster.</h1>
+
+            <p>
+              Search, filter, and sort your full e-commerce catalog with a clean
+              premium shopping experience designed for speed and clarity.
+            </p>
+          </div>
+
+          <div className="products-catalog-metrics">
+            <div className="products-metric-card">
+              <strong>{filteredProducts.length}</strong>
+              <span>
+                {filteredProducts.length === 1
+                  ? "Product found"
+                  : "Products found"}
+              </span>
+            </div>
+
+            <div className="products-metric-card">
+              <strong>{totalProducts}</strong>
+              <span>Total products</span>
+            </div>
+
+            <div className="products-metric-card">
+              <strong>{totalCategories}</strong>
+              <span>Categories</span>
+            </div>
+
+            <div className="products-metric-card">
+              <strong>{inStockProducts}</strong>
+              <span>In stock</span>
+            </div>
+          </div>
         </div>
 
-        <p style={styles.count}>{filteredProducts.length} products found</p>
-      </div>
+        <div className="products-filter-card">
+          <div className="products-search-box">
+            <label htmlFor="productSearch">Search products</label>
 
-      <div style={styles.filters}>
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchText}
-          onChange={(event) => setSearchText(event.target.value)}
-          style={styles.input}
-        />
+            <div className="products-search-input-wrap">
+              <span>⌕</span>
 
-        <select
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          style={styles.select}
-        >
+              <input
+                id="productSearch"
+                type="text"
+                placeholder="Search by name, brand, category, description, or tags..."
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="products-select-box">
+            <label htmlFor="productCategory">Category</label>
+
+            <select
+              id="productCategory"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            >
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="products-select-box">
+            <label htmlFor="productSort">Sort by</label>
+
+            <select
+              id="productSort"
+              value={sortOption}
+              onChange={(event) => setSortOption(event.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="low-high">Price: Low to High</option>
+              <option value="high-low">Price: High to Low</option>
+              <option value="rating-high">Highest Rated</option>
+              <option value="most-reviewed">Most Reviewed</option>
+              <option value="stock-high">Stock: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="products-category-strip" aria-label="Product categories">
           {categories.map((item) => (
-            <option key={item} value={item}>
+            <button
+              type="button"
+              key={item}
+              className={
+                category === item
+                  ? "products-category-chip active"
+                  : "products-category-chip"
+              }
+              onClick={() => setCategory(item)}
+            >
               {item}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={sortOption}
-          onChange={(event) => setSortOption(event.target.value)}
-          style={styles.select}
-        >
-          <option value="">Sort By</option>
-          <option value="low-high">Price: Low to High</option>
-          <option value="high-low">Price: High to Low</option>
-          <option value="rating">Highest Rating</option>
-        </select>
-      </div>
-
-      {filteredProducts.length === 0 ? (
-        <p style={styles.noResult}>No products matched your search.</p>
-      ) : (
-        <div style={styles.grid}>
-          {filteredProducts.map((product) => (
-            <ProductCard key={product._id} product={product} />
+            </button>
           ))}
         </div>
-      )}
-    </section>
+
+        {hasActiveFilters && (
+          <div className="products-active-filters">
+            <div>
+              <span>Active view</span>
+
+              <strong>
+                {category !== "All" ? category : "All categories"} ·{" "}
+                {sortLabels[sortOption]}
+              </strong>
+            </div>
+
+            <button type="button" onClick={resetFilters}>
+              Clear filters
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section id="products-grid" className="products-grid-section">
+        <div className="products-grid-topbar">
+          <div>
+            <span>Showing catalog results</span>
+            <strong>
+              {filteredProducts.length}{" "}
+              {filteredProducts.length === 1 ? "product" : "products"}
+            </strong>
+          </div>
+
+          {hasActiveFilters && (
+            <button type="button" onClick={resetFilters}>
+              Reset view
+            </button>
+          )}
+        </div>
+
+        {filteredProducts.length === 0 ? (
+          <div className="products-empty-state">
+            <div className="products-empty-icon">🛍️</div>
+
+            <span className="products-kicker">No Results</span>
+
+            <h2>No products matched your search</h2>
+
+            <p>
+              Try a different keyword, choose another category, or clear the
+              current filters to view the full product catalog.
+            </p>
+
+            <button type="button" onClick={resetFilters}>
+              Reset Search
+            </button>
+          </div>
+        ) : (
+          <div className="products-grid">
+            {filteredProducts.map((product) => (
+              <div
+                className="products-card-frame"
+                key={product._id || product.id || product.name}
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
-
-const styles = {
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-  },
-  count: {
-    background: "white",
-    padding: "10px 14px",
-    borderRadius: "8px",
-    fontWeight: "bold",
-  },
-  filters: {
-    marginTop: "25px",
-    display: "grid",
-    gridTemplateColumns: "2fr 1fr 1fr",
-    gap: "15px",
-  },
-  input: {
-    padding: "12px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "16px",
-  },
-  select: {
-    padding: "12px",
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    fontSize: "16px",
-  },
-  grid: {
-    marginTop: "25px",
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "24px",
-  },
-  noResult: {
-    marginTop: "25px",
-    background: "white",
-    padding: "20px",
-    borderRadius: "10px",
-  },
-};
 
 export default Products;

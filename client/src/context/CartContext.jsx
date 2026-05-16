@@ -24,12 +24,22 @@ export function CartProvider({ children }) {
   function addToCart(product) {
     const productId = getProductId(product);
 
+    if (product.countInStock <= 0) {
+      alert("This product is out of stock.");
+      return;
+    }
+
     setCartItems((prevItems) => {
       const existingItem = prevItems.find(
         (item) => getProductId(item) === productId
       );
 
       if (existingItem) {
+        if (existingItem.quantity >= product.countInStock) {
+          alert("You cannot add more than the available stock.");
+          return prevItems;
+        }
+
         return prevItems.map((item) =>
           getProductId(item) === productId
             ? { ...item, quantity: item.quantity + 1 }
@@ -57,11 +67,18 @@ export function CartProvider({ children }) {
 
   function increaseQuantity(productId) {
     setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        getProductId(item) === productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prevItems.map((item) => {
+        if (getProductId(item) === productId) {
+          if (item.quantity >= item.countInStock) {
+            alert("You cannot add more than the available stock.");
+            return item;
+          }
+
+          return { ...item, quantity: item.quantity + 1 };
+        }
+
+        return item;
+      })
     );
   }
 
@@ -77,6 +94,7 @@ export function CartProvider({ children }) {
 
   function clearCart() {
     setCartItems([]);
+    localStorage.removeItem("cartItems");
   }
 
   const cartTotal = cartItems.reduce(
