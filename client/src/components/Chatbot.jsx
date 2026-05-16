@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../services/api";
+import "../styles/Chatbot.css";
 
 function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       sender: "bot",
-      text: "Hi! I can help you find products, check categories, suggest items by budget, and explain checkout.",
+      text: "Hi, I’m your AI shopping assistant. Ask me to find products, compare options, suggest items by budget, or help with checkout.",
       products: [],
     },
   ]);
@@ -16,18 +17,23 @@ function Chatbot() {
 
   const messagesEndRef = useRef(null);
 
+  const quickPrompts = [
+    "Show me the best products",
+    "Suggest products under £100",
+    "What categories do you have?",
+    "Help me choose a product",
+  ];
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, loading]);
 
-  const sendMessageHandler = async (e) => {
-    e.preventDefault();
+  const sendMessage = async (messageText) => {
+    const userMessage = messageText.trim();
 
-    if (!input.trim()) return;
-
-    const userMessage = input.trim();
+    if (!userMessage || loading) return;
 
     setMessages((prevMessages) => [
       ...prevMessages,
@@ -51,7 +57,9 @@ function Chatbot() {
         ...prevMessages,
         {
           sender: "bot",
-          text: res.data.reply,
+          text:
+            res.data.reply ||
+            "I found some useful information for your shopping journey.",
           products: res.data.products || [],
         },
       ]);
@@ -63,7 +71,7 @@ function Chatbot() {
           text:
             error.response?.data?.message ||
             error.message ||
-            "Sorry, I could not respond right now.",
+            "Sorry, I could not respond right now. Please try again.",
           products: [],
         },
       ]);
@@ -72,73 +80,103 @@ function Chatbot() {
     }
   };
 
+  const sendMessageHandler = async (e) => {
+    e.preventDefault();
+    await sendMessage(input);
+  };
+
   return (
     <>
       {isOpen && (
-        <div style={styles.chatWindow}>
-          <div style={styles.header}>
-            <div>
-              <h3 style={styles.title}>AI Shop Assistant</h3>
-              <p style={styles.status}>Online</p>
+        <section className="chatbot-window" aria-label="AI shopping assistant">
+          <div className="chatbot-header">
+            <div className="chatbot-header-left">
+              <div className="chatbot-avatar">
+                <span>AI</span>
+              </div>
+
+              <div>
+                <h3>AI Shop Assistant</h3>
+
+                <div className="chatbot-status">
+                  <span></span>
+                  Online now
+                </div>
+              </div>
             </div>
 
             <button
               type="button"
+              className="chatbot-close-btn"
               onClick={() => setIsOpen(false)}
-              style={styles.closeButton}
+              aria-label="Close chatbot"
             >
               ×
             </button>
           </div>
 
-          <div style={styles.messagesBox}>
+          <div className="chatbot-messages">
+            <div className="chatbot-intro-card">
+              <span>Smart Assistant</span>
+              <strong>Find products faster</strong>
+              <p>Ask about products, prices, categories, stock, or checkout.</p>
+            </div>
+
             {messages.map((message, index) => (
               <div
-                key={index}
-                style={
+                key={`${message.sender}-${index}`}
+                className={
                   message.sender === "user"
-                    ? styles.userMessageWrapper
-                    : styles.botMessageWrapper
+                    ? "chatbot-message-row user"
+                    : "chatbot-message-row bot"
                 }
               >
+                {message.sender === "bot" && (
+                  <div className="chatbot-small-avatar">AI</div>
+                )}
+
                 <div
-                  style={
+                  className={
                     message.sender === "user"
-                      ? styles.userMessage
-                      : styles.botMessage
+                      ? "chatbot-bubble user-bubble"
+                      : "chatbot-bubble bot-bubble"
                   }
                 >
                   {message.text.split("\n").map((line, lineIndex) => (
-                    <p key={lineIndex} style={styles.messageLine}>
-                      {line}
-                    </p>
+                    <p key={lineIndex}>{line}</p>
                   ))}
 
                   {message.products && message.products.length > 0 && (
-                    <div style={styles.productsBox}>
-                      {message.products.map((product) => (
-                        <div key={product._id} style={styles.productCard}>
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            style={styles.productImage}
-                          />
+                    <div className="chatbot-products">
+                      {message.products.map((product) => {
+                        const productId = product._id || product.id;
 
-                          <div style={styles.productInfo}>
-                            <strong>{product.name}</strong>
-                            <span>£{Number(product.price).toFixed(2)}</span>
-                            <small>{product.category}</small>
+                        return (
+                          <article
+                            key={productId || product.name}
+                            className="chatbot-product-card"
+                          >
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="chatbot-product-image"
+                            />
 
-                            <Link
-                              to={`/products/${product._id}`}
-                              style={styles.productLink}
-                              onClick={() => setIsOpen(false)}
-                            >
-                              View Product
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
+                            <div className="chatbot-product-info">
+                              <span>{product.category || "Product"}</span>
+                              <strong>{product.name}</strong>
+                              <p>£{Number(product.price || 0).toFixed(2)}</p>
+
+                              <Link
+                                to={`/products/${productId}`}
+                                onClick={() => setIsOpen(false)}
+                              >
+                                View Product
+                              </Link>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -146,9 +184,15 @@ function Chatbot() {
             ))}
 
             {loading && (
-              <div style={styles.botMessageWrapper}>
-                <div style={styles.botMessage}>
-                  <p style={styles.messageLine}>Typing...</p>
+              <div className="chatbot-message-row bot">
+                <div className="chatbot-small-avatar">AI</div>
+
+                <div className="chatbot-bubble bot-bubble typing-bubble">
+                  <div className="chatbot-typing">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
                 </div>
               </div>
             )}
@@ -156,177 +200,52 @@ function Chatbot() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={sendMessageHandler} style={styles.inputForm}>
-            <input
-              type="text"
-              placeholder="Ask about products..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              style={styles.input}
-            />
+          <div className="chatbot-quick-prompts">
+            {quickPrompts.map((prompt) => (
+              <button
+                type="button"
+                key={prompt}
+                onClick={() => sendMessage(prompt)}
+                disabled={loading}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
 
-            <button type="submit" style={styles.sendButton} disabled={loading}>
-              Send
+          <form className="chatbot-input-form" onSubmit={sendMessageHandler}>
+            <div className="chatbot-input-wrap">
+              <input
+                type="text"
+                placeholder="Ask about products..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="chatbot-send-btn"
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+            >
+              ➜
             </button>
           </form>
-        </div>
+        </section>
       )}
 
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        style={styles.floatingButton}
+        className={isOpen ? "chatbot-floating-btn open" : "chatbot-floating-btn"}
+        aria-label={isOpen ? "Close chatbot" : "Open chatbot"}
       >
         {isOpen ? "×" : "💬"}
       </button>
     </>
   );
 }
-
-const styles = {
-  floatingButton: {
-    position: "fixed",
-    right: "25px",
-    bottom: "25px",
-    width: "60px",
-    height: "60px",
-    borderRadius: "50%",
-    border: "none",
-    background: "#111827",
-    color: "white",
-    fontSize: "26px",
-    cursor: "pointer",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-    zIndex: 1000,
-  },
-  chatWindow: {
-    position: "fixed",
-    right: "25px",
-    bottom: "95px",
-    width: "380px",
-    maxWidth: "calc(100vw - 40px)",
-    height: "520px",
-    background: "white",
-    borderRadius: "18px",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-    zIndex: 999,
-  },
-  header: {
-    background: "#111827",
-    color: "white",
-    padding: "16px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    margin: 0,
-    fontSize: "18px",
-  },
-  status: {
-    margin: "4px 0 0",
-    color: "#86efac",
-    fontSize: "13px",
-  },
-  closeButton: {
-    background: "transparent",
-    color: "white",
-    border: "none",
-    fontSize: "28px",
-    cursor: "pointer",
-  },
-  messagesBox: {
-    flex: 1,
-    padding: "16px",
-    overflowY: "auto",
-    background: "#f9fafb",
-  },
-  userMessageWrapper: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginBottom: "12px",
-  },
-  botMessageWrapper: {
-    display: "flex",
-    justifyContent: "flex-start",
-    marginBottom: "12px",
-  },
-  userMessage: {
-    maxWidth: "80%",
-    background: "#2563eb",
-    color: "white",
-    padding: "10px 12px",
-    borderRadius: "14px 14px 0 14px",
-  },
-  botMessage: {
-    maxWidth: "90%",
-    background: "white",
-    color: "#111827",
-    padding: "10px 12px",
-    borderRadius: "14px 14px 14px 0",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-  },
-  messageLine: {
-    margin: "4px 0",
-    lineHeight: "1.4",
-    fontSize: "14px",
-  },
-  inputForm: {
-    display: "flex",
-    gap: "8px",
-    padding: "12px",
-    borderTop: "1px solid #e5e7eb",
-    background: "white",
-  },
-  input: {
-    flex: 1,
-    padding: "11px",
-    border: "1px solid #d1d5db",
-    borderRadius: "10px",
-    fontSize: "14px",
-  },
-  sendButton: {
-    background: "#111827",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    padding: "0 14px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-  productsBox: {
-    marginTop: "10px",
-    display: "grid",
-    gap: "8px",
-  },
-  productCard: {
-    display: "grid",
-    gridTemplateColumns: "55px 1fr",
-    gap: "10px",
-    background: "#f3f4f6",
-    borderRadius: "10px",
-    padding: "8px",
-  },
-  productImage: {
-    width: "55px",
-    height: "55px",
-    objectFit: "cover",
-    borderRadius: "8px",
-  },
-  productInfo: {
-    display: "grid",
-    gap: "2px",
-    fontSize: "13px",
-  },
-  productLink: {
-    color: "#2563eb",
-    fontWeight: "bold",
-    textDecoration: "none",
-    marginTop: "4px",
-  },
-};
 
 export default Chatbot;
