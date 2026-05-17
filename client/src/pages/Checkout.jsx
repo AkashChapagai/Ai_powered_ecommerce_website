@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 function Checkout() {
   const navigate = useNavigate();
 
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal } = useCart();
   const { userInfo } = useAuth();
 
   const [address, setAddress] = useState("");
@@ -17,7 +17,6 @@ function Checkout() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const itemsPrice = Number(cartTotal.toFixed(2));
   const shippingPrice = itemsPrice > 100 ? 0 : 4.99;
@@ -26,7 +25,7 @@ function Checkout() {
 
   const placeOrderHandler = async (e) => {
     e.preventDefault();
-//
+
     if (!userInfo) {
       navigate("/login");
       return;
@@ -40,7 +39,6 @@ function Checkout() {
     try {
       setLoading(true);
       setError("");
-      setSuccessMessage("");
 
       const orderData = {
         orderItems: cartItems.map((item) => ({
@@ -58,38 +56,39 @@ function Checkout() {
           country,
         },
 
-        paymentMethod: "Cash on Delivery",
+        paymentMethod: "Stripe Test Payment",
         shippingPrice,
         taxPrice,
       };
 
-      const res = await API.post("/orders", orderData);
+      const orderRes = await API.post("/orders", orderData);
 
-      if (clearCart) {
-        clearCart();
+      const paymentRes = await API.post("/payments/create-checkout-session", {
+        orderId: orderRes.data._id,
+      });
+
+      if (!paymentRes.data.url) {
+        throw new Error("Stripe checkout URL was not returned.");
       }
 
-      setSuccessMessage(`Order placed successfully. Order ID: ${res.data._id}`);
-
-      setTimeout(() => {
-        navigate("/products");
-      }, 2000);
+      window.location.href = paymentRes.data.url;
     } catch (err) {
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Failed to place order. Please try again."
+          "Failed to start Stripe payment. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  if (cartItems.length === 0 && !successMessage) {
+  if (cartItems.length === 0) {
     return (
       <section>
         <h1>Checkout</h1>
         <p>Your cart is empty.</p>
+
         <Link to="/products" style={styles.link}>
           Continue Shopping
         </Link>
@@ -103,13 +102,10 @@ function Checkout() {
       <p>Review your order and enter delivery details.</p>
 
       {!userInfo && (
-        <p style={styles.error}>
-          You must login before placing an order.
-        </p>
+        <p style={styles.error}>You must login before placing an order.</p>
       )}
 
       {error && <p style={styles.error}>{error}</p>}
-      {successMessage && <p style={styles.success}>{successMessage}</p>}
 
       <div style={styles.layout}>
         <form style={styles.formBox} onSubmit={placeOrderHandler}>
@@ -188,8 +184,13 @@ function Checkout() {
           </div>
 
           <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "Placing order..." : "Place Order"}
+            {loading ? "Redirecting to Stripe..." : "Pay with Stripe Test Mode"}
           </button>
+
+          <p style={styles.secureNote}>
+            This project uses Stripe test mode only. No real money is taken when
+            using Stripe test cards.
+          </p>
         </form>
 
         <div style={styles.summaryBox}>
@@ -207,7 +208,7 @@ function Checkout() {
               </div>
 
               <strong>
-                £{(Number(item.price) * item.quantity).toFixed(2)}
+                £{(Number(item.price) * Number(item.quantity)).toFixed(2)}
               </strong>
             </div>
           ))}
@@ -233,7 +234,7 @@ function Checkout() {
           </div>
 
           <p style={styles.note}>
-            Payment method: Cash on Delivery. Stripe test payment can be added later.
+            Payment method: by card with stripe.
           </p>
         </div>
       </div>
@@ -248,6 +249,7 @@ const styles = {
     gridTemplateColumns: "1.2fr 1fr",
     gap: "30px",
   },
+
   formBox: {
     background: "white",
     padding: "30px",
@@ -255,27 +257,32 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
+
   summaryBox: {
     background: "white",
     padding: "30px",
     borderRadius: "14px",
     height: "fit-content",
   },
+
   field: {
     display: "grid",
     gap: "8px",
   },
+
   row: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "15px",
   },
+
   input: {
     padding: "12px",
     border: "1px solid #ddd",
     borderRadius: "8px",
     fontSize: "16px",
   },
+
   button: {
     padding: "13px",
     background: "#111827",
@@ -285,6 +292,14 @@ const styles = {
     fontSize: "16px",
     cursor: "pointer",
   },
+
+  secureNote: {
+    margin: 0,
+    fontSize: "13px",
+    color: "#6b7280",
+    lineHeight: "1.5",
+  },
+
   orderItem: {
     display: "grid",
     gridTemplateColumns: "70px 1fr auto",
@@ -293,17 +308,20 @@ const styles = {
     borderBottom: "1px solid #e5e7eb",
     padding: "15px 0",
   },
+
   image: {
     width: "70px",
     height: "60px",
     objectFit: "cover",
     borderRadius: "8px",
   },
+
   priceRow: {
     marginTop: "12px",
     display: "flex",
     justifyContent: "space-between",
   },
+
   total: {
     marginTop: "20px",
     display: "flex",
@@ -311,28 +329,23 @@ const styles = {
     borderTop: "1px solid #e5e7eb",
     paddingTop: "15px",
   },
+
   note: {
     marginTop: "15px",
     color: "#6b7280",
     fontSize: "14px",
   },
+
   link: {
     display: "inline-block",
     marginTop: "15px",
     color: "#2563eb",
     fontWeight: "bold",
   },
+
   error: {
     background: "#fee2e2",
     color: "#991b1b",
-    padding: "10px",
-    borderRadius: "8px",
-    marginTop: "15px",
-    marginBottom: "15px",
-  },
-  success: {
-    background: "#dcfce7",
-    color: "#166534",
     padding: "10px",
     borderRadius: "8px",
     marginTop: "15px",

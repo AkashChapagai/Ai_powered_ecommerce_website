@@ -6,20 +6,24 @@ const orderItemSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+
     qty: {
       type: Number,
       required: true,
       min: 1,
     },
+
     image: {
       type: String,
       required: true,
     },
+
     price: {
       type: Number,
       required: true,
       min: 0,
     },
+
     product: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -35,14 +39,17 @@ const shippingAddressSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+
     city: {
       type: String,
       required: true,
     },
+
     postalCode: {
       type: String,
       required: true,
     },
+
     country: {
       type: String,
       required: true,
@@ -59,9 +66,21 @@ const orderSchema = mongoose.Schema(
       ref: "User",
     },
 
-    orderItems: [orderItemSchema],
+    orderItems: {
+      type: [orderItemSchema],
+      required: true,
+      validate: {
+        validator: function (items) {
+          return items && items.length > 0;
+        },
+        message: "Order must contain at least one item.",
+      },
+    },
 
-    shippingAddress: shippingAddressSchema,
+    shippingAddress: {
+      type: shippingAddressSchema,
+      required: true,
+    },
 
     paymentMethod: {
       type: String,
@@ -101,6 +120,16 @@ const orderSchema = mongoose.Schema(
 
     paidAt: {
       type: Date,
+    },
+
+    stripeCheckoutSessionId: {
+      type: String,
+    },
+
+    paymentResult: {
+      id: { type: String },
+      status: { type: String },
+      email_address: { type: String },
     },
 
     isDelivered: {

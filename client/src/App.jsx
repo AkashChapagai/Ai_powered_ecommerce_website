@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -9,13 +10,14 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
+
 import MyOrders from "./pages/MyOrders";
 import AdminOrders from "./pages/AdminOrders";
+
 import Chatbot from "./components/Chatbot";
-
-
 
 function App() {
   return (
@@ -25,12 +27,21 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+
           <Route path="/products" element={<Products />} />
+
           <Route path="/products/:id" element={<ProductDetails />} />
+
           <Route path="/login" element={<Login />} />
+
           <Route path="/register" element={<Register />} />
+
           <Route path="/cart" element={<Cart />} />
+
           <Route path="/checkout" element={<Checkout />} />
+
+          <Route path="/order-success" element={<OrderSuccess />} />
+
           <Route path="/my-orders" element={<MyOrders />} />
 
           <Route
@@ -41,6 +52,7 @@ function App() {
               </AdminRoute>
             }
           />
+
           <Route
             path="/admin/orders"
             element={
@@ -53,6 +65,7 @@ function App() {
       </main>
 
       <Footer />
+
       <Chatbot />
     </BrowserRouter>
   );
